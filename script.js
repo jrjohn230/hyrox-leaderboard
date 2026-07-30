@@ -1,72 +1,29 @@
-// ==========================================================
-// BFT HALFROX LEADERBOARD
-// script.js
-// ==========================================================
-
-// Published Google Sheet (CSV)
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTS7ihQsENKn-CP2aougdTfYzNnnmQcbvZFCDFbnKlAWL-gCqbKRF5zjcEYoI_yFDGK7fqqE3Evnaqj/pub?output=csv";
 
 const leaderboardBody = document.getElementById("leaderboardBody");
 const lastUpdated = document.getElementById("lastUpdated");
 
-// Refresh every 10 seconds (runs silently)
 const REFRESH_INTERVAL = 10000;
 
-// ----------------------------------------------------------
-// Convert HH:MM:SS or MM:SS into total seconds
-// ----------------------------------------------------------
+// -----------------------------
+// CSV parser
+// -----------------------------
+function parseCSV(csv) {
 
-function raceTimeToSeconds(timeString) {
+    const lines = csv.trim().split(/\r?\n/);
 
-    if (!timeString) return Number.MAX_SAFE_INTEGER;
+    const headers = lines[0].split(",").map(h => h.trim());
 
-    const parts = timeString.trim().split(":").map(Number);
+    return lines.slice(1).map(line => {
 
-    if (parts.some(isNaN)) return Number.MAX_SAFE_INTEGER;
+        const values = line.split(",");
 
-    if (parts.length === 3) {
+        const obj = {};
 
-        return (
-            parts[0] * 3600 +
-            parts[1] * 60 +
-            parts[2]
-        );
+        headers.forEach((header, i) => {
 
-    }
-
-    if (parts.length === 2) {
-
-        return (
-            parts[0] * 60 +
-            parts[1]
-        );
-
-    }
-
-    return Number.MAX_SAFE_INTEGER;
-
-}
-
-// ----------------------------------------------------------
-// Parse CSV
-// ----------------------------------------------------------
-
-function parseCSV(text) {
-
-    const rows = text.trim().split("\n");
-
-    const headers = rows.shift().split(",");
-
-    return rows.map(row => {
-
-        const values = row.split(",");
-
-        let obj = {};
-
-        headers.forEach((header, index) => {
-
-            obj[header.trim()] = (values[index] || "").trim();
+            obj[header] = (values[i] || "").trim();
 
         });
 
@@ -76,45 +33,46 @@ function parseCSV(text) {
 
 }
 
-// ----------------------------------------------------------
-// Build Athlete Name
-// ----------------------------------------------------------
+// -----------------------------
+// Convert race time
+// -----------------------------
+function timeToSeconds(time) {
 
-function athleteName(row) {
+    if (!time) return Infinity;
 
-    const athlete =
-        `${row["First Name"]} ${row["Last Name"]}`.trim();
+    const p = time.split(":").map(Number);
 
-    const partner =
-        row["Partner Full Name"];
+    if (p.length === 3) {
 
-    if (partner) {
-
-        return `${athlete} & ${partner}`;
+        return p[0] * 3600 + p[1] * 60 + p[2];
 
     }
 
-    return athlete;
+    if (p.length === 2) {
+
+        return p[0] * 60 + p[1];
+
+    }
+
+    return Infinity;
 
 }
 
-// ----------------------------------------------------------
-// Build Table
-// ----------------------------------------------------------
-
-function renderLeaderboard(results) {
+// -----------------------------
+// Render leaderboard
+// -----------------------------
+function render(results) {
 
     leaderboardBody.innerHTML = "";
 
     if (results.length === 0) {
 
         leaderboardBody.innerHTML = `
-            <tr>
-                <td colspan="4">
-                    Waiting for race results...
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td colspan="4">
+                Waiting for race results...
+            </td>
+        </tr>`;
 
         return;
 
@@ -122,117 +80,80 @@ function renderLeaderboard(results) {
 
     results.forEach((athlete, index) => {
 
-        const row = document.createElement("tr");
+        const tr = document.createElement("tr");
 
-        row.innerHTML = `
+        const name =
+            athlete["Partner Full Name"]
+            ? `${athlete["First Name"]} ${athlete["Last Name"]} & ${athlete["Partner Full Name"]}`
+            : `${athlete["First Name"]} ${athlete["Last Name"]}`;
 
+        tr.innerHTML = `
             <td>${index + 1}</td>
-
-            <td>${athlete.displayName}</td>
-
-            <td>${athlete.Division}</td>
-
+            <td>${name}</td>
+            <td>${athlete["Division"]}</td>
             <td>${athlete["Race Time"]}</td>
-
         `;
 
-        leaderboardBody.appendChild(row);
+        leaderboardBody.appendChild(tr);
 
     });
 
 }
 
-// ----------------------------------------------------------
-// Update Timestamp
-// ----------------------------------------------------------
-
-function updateTimestamp() {
-
-    const now = new Date();
-
-    lastUpdated.textContent =
-        now.toLocaleTimeString();
-
-}
-
-// ----------------------------------------------------------
-// Fetch Sheet
-// ----------------------------------------------------------
-
+// -----------------------------
+// Load Sheet
+// -----------------------------
 async function loadLeaderboard() {
 
     try {
 
-        const response = await fetch(
-            SHEET_URL + "&t=" + Date.now()
-        );
+        const response = await fetch(SHEET_URL + "&t=" + Date.now());
+
+        if (!response.ok) {
+
+            throw new Error("Unable to download sheet");
+
+        }
 
         const csv = await response.text();
 
         let athletes = parseCSV(csv);
 
-        athletes = athletes.filter(a => {
-
-            return a["Finish Time"];
-
-        });
-
-        athletes = athletes.map(a => ({
-
-            ...a,
-
-            displayName: athleteName(a),
-
-            seconds:
-                raceTimeToSeconds(
-                    a["Race Time"]
-                )
-
-        }));
+        athletes = athletes.filter(a => a["Finish Time"] !== "");
 
         athletes.sort((a, b) => {
 
-            return a.seconds - b.seconds;
+            return (
+                timeToSeconds(a["Race Time"]) -
+                timeToSeconds(b["Race Time"])
+            );
 
         });
 
         athletes = athletes.slice(0, 10);
 
-        renderLeaderboard(athletes);
+        render(athletes);
 
-        updateTimestamp();
+        lastUpdated.textContent =
+            new Date().toLocaleTimeString();
 
     }
 
-    catch (error) {
+    catch (err) {
 
-        console.error(error);
+        console.error(err);
 
         leaderboardBody.innerHTML = `
-
-            <tr>
-
-                <td colspan="4">
-
-                    Unable to load results.
-
-                </td>
-
-            </tr>
-
-        `;
+        <tr>
+            <td colspan="4">
+                Error loading leaderboard.
+            </td>
+        </tr>`;
 
     }
 
 }
 
-// ----------------------------------------------------------
-// Start
-// ----------------------------------------------------------
-
 loadLeaderboard();
 
-setInterval(
-    loadLeaderboard,
-    REFRESH_INTERVAL
-);
+setInterval(loadLeaderboard, REFRESH_INTERVAL);
