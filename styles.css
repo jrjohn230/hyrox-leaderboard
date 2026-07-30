@@ -1,0 +1,347 @@
+/* ==========================================================
+   BFT HALFROX LEADERBOARD
+   styles.css
+========================================================== */
+
+/* ==========================================
+   ROOT VARIABLES
+========================================== */
+
+:root{
+
+    --bg:#050505;
+    --bg2:#111111;
+
+    --panel:rgba(20,20,20,.88);
+
+    --yellow:#FFD100;
+
+    --white:#FFFFFF;
+
+    --gray:#BFBFBF;
+
+    --gold:#FFD100;
+    --silver:#D9D9D9;
+    --bronze:#C8874B;
+
+    --green:#31D158;
+    --red:#FF453A;
+
+    --shadow:
+        0 18px 45px rgba(0,0,0,.45);
+
+}
+
+/* ==========================================
+   RESET
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body{
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    font-family:"Montserrat",sans-serif;
+
+    background:#000;
+
+    color:var(--white);
+
+}
+
+/* ==========================================
+   BACKGROUND
+========================================== */
+
+.background{
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+        radial-gradient(circle at top,#1c1c1c 0%,#050505 75%);
+
+    z-index:-3;
+
+}
+
+.background::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-30%;
+
+    background:
+
+        repeating-linear-gradient(
+
+            -45deg,
+
+            rgba(255,255,255,.015) 0px,
+
+            rgba(255,255,255,.015) 2px,
+
+            transparent 2px,
+
+            transparent 30px
+
+        );
+
+    animation:drift 40s linear infinite;
+
+}
+
+.overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            transparent 30%,
+            rgba(0,0,0,.35)
+        );
+
+    z-index:-2;
+
+}
+
+@keyframes drift{
+
+    from{
+        transform:translateX(0);
+    }
+
+    to{
+        transform:translateX(140px);
+    }
+
+}
+
+/* ==========================================
+   MAIN APP
+========================================== */
+
+#app{
+
+    width:95%;
+    height:95%;
+
+    margin:auto;
+
+    display:flex;
+    flex-direction:column;
+
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+header{
+
+    height:120px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    position:relative;
+
+    border-bottom:4px solid var(--yellow);
+
+}
+
+/* Animated light sweep */
+
+header::after{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+    left:-25%;
+
+    width:18%;
+    height:100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.18),
+            transparent
+        );
+
+    animation:lightsweep 14s linear infinite;
+
+}
+
+@keyframes lightsweep{
+
+    from{
+        left:-30%;
+    }
+
+    to{
+        left:130%;
+    }
+
+}
+
+/* ==========================================
+   LOGOS
+========================================== */
+
+.logo{
+
+    width:230px;
+
+    display:flex;
+    align-items:center;
+
+}
+
+.logo.right{
+
+    justify-content:flex-end;
+
+}
+
+.logo img{
+
+    max-height:72px;
+    max-width:220px;
+
+    object-fit:contain;
+
+}
+
+/* ==========================================
+   TITLE
+========================================== */
+
+.title{
+
+    flex:1;
+    text-align:center;
+
+}
+
+.title h1{
+
+    font-size:2.6rem;
+    font-weight:900;
+
+    letter-spacing:3px;
+
+    color:var(--white);
+
+    white-space:nowrap;
+
+}
+
+/* ==========================================
+   LIVE STATUS
+========================================== */
+
+#liveStatus{
+
+    margin-top:10px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    gap:10px;
+
+    color:var(--yellow);
+
+    font-weight:700;
+
+    letter-spacing:2px;
+
+    text-transform:uppercase;
+
+}
+
+.live-dot{
+
+    width:12px;
+    height:12px;
+
+    border-radius:50%;
+
+    background:var(--green);
+
+    animation:pulse 2s infinite;
+
+}
+
+@keyframes pulse{
+
+    0%{
+        transform:scale(1);
+        opacity:1;
+    }
+
+    50%{
+        transform:scale(1.35);
+        opacity:.65;
+    }
+
+    100%{
+        transform:scale(1);
+        opacity:1;
+    }
+
+}
+
+/* ==========================================
+   MAIN
+========================================== */
+
+main{
+
+    flex:1;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+}
+
+/* ==========================================
+   LEADERBOARD CARD
+========================================== */
+
+.leaderboard-card{
+
+    width:100%;
+
+    background:var(--panel);
+
+    border-radius:20px;
+
+    padding:28px;
+
+    backdrop-filter:blur(14px);
+
+    box-shadow:var(--shadow);
+
+}
