@@ -6,100 +6,33 @@ const lastUpdated = document.getElementById("lastUpdated");
 
 const REFRESH_INTERVAL = 10000;
 
-// -------------------------------------
-// Parse CSV
-// -------------------------------------
-function parseCSV(csv) {
+function normalizeKeys(row) {
+    const obj = {};
 
-    const rows = [];
-    let row = [];
-    let value = "";
-    let insideQuotes = false;
-
-    for (let i = 0; i < csv.length; i++) {
-
-        const c = csv[i];
-
-        if (c === '"') {
-
-            insideQuotes = !insideQuotes;
-
-        } else if (c === "," && !insideQuotes) {
-
-            row.push(value);
-            value = "";
-
-        } else if ((c === "\n" || c === "\r") && !insideQuotes) {
-
-            if (value !== "" || row.length > 0) {
-
-                row.push(value);
-                rows.push(row);
-
-                row = [];
-                value = "";
-
-            }
-
-        } else {
-
-            value += c;
-
-        }
-
-    }
-
-    if (value !== "" || row.length > 0) {
-        row.push(value);
-        rows.push(row);
-    }
-
-    const headers = rows[0].map(h =>
-        h.replace(/^"|"$/g, "").trim().toLowerCase()
-    );
-
-    return rows.slice(1).map(r => {
-
-        const obj = {};
-
-        headers.forEach((header, i) => {
-
-            obj[header] = (r[i] || "")
-                .replace(/^"|"$/g, "")
-                .trim();
-
-        });
-
-        return obj;
-
+    Object.keys(row).forEach(key => {
+        obj[key.trim().toLowerCase()] = row[key];
     });
 
+    return obj;
 }
 
-// -------------------------------------
-// Convert race time
-// -------------------------------------
 function timeToSeconds(time) {
 
     if (!time) return Infinity;
 
-    const p = time.split(":").map(Number);
+    const parts = time.split(":").map(Number);
 
-    if (p.length === 3) {
-        return p[0] * 3600 + p[1] * 60 + p[2];
+    if (parts.length === 3) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
     }
 
-    if (p.length === 2) {
-        return p[0] * 60 + p[1];
+    if (parts.length === 2) {
+        return parts[0] * 60 + parts[1];
     }
 
     return Infinity;
-
 }
 
-// -------------------------------------
-// Render
-// -------------------------------------
 function render(results) {
 
     leaderboardBody.innerHTML = "";
@@ -108,22 +41,24 @@ function render(results) {
 
         leaderboardBody.innerHTML = `
         <tr>
-            <td colspan="4">Waiting for race results...</td>
+            <td colspan="4">
+                Waiting for race results...
+            </td>
         </tr>`;
 
         return;
-
     }
 
     results.forEach((athlete, index) => {
 
+        const partner = athlete["partner full name"];
+
+        const name =
+            partner && partner.trim() !== ""
+            ? `${athlete["first name"]} ${athlete["last name"]} & ${partner}`
+            : `${athlete["first name"]} ${athlete["last name"]}`;
+
         const tr = document.createElement("tr");
-
-        let name = `${athlete["first name"]} ${athlete["last name"]}`;
-
-        if (athlete["partner full name"] !== "") {
-            name += ` & ${athlete["partner full name"]}`;
-        }
 
         tr.innerHTML = `
             <td>${index + 1}</td>
@@ -138,45 +73,49 @@ function render(results) {
 
 }
 
-// -------------------------------------
-// Load Leaderboard
-// -------------------------------------
 async function loadLeaderboard() {
 
     try {
 
         const response = await fetch(SHEET_URL + "&t=" + Date.now());
 
-        if (!response.ok) {
-            throw new Error("Unable to download sheet");
-        }
-
         const csv = await response.text();
 
-        let athletes = parseCSV(csv);
+        Papa.parse(csv, {
 
-        athletes = athletes.filter(a => a["finish time"] !== "");
+            header: true,
+            skipEmptyLines: true,
 
-        athletes.sort((a, b) =>
-            timeToSeconds(a["race time"]) -
-            timeToSeconds(b["race time"])
-        );
+            complete: function(results) {
 
-        athletes = athletes.slice(0, 10);
+                let athletes = results.data.map(normalizeKeys);
 
-        render(athletes);
+                console.log(athletes);
 
-        lastUpdated.textContent =
-            new Date().toLocaleTimeString();
+                athletes = athletes.filter(a =>
+                    a["finish time"] &&
+                    a["finish time"].trim() !== ""
+                );
 
-    } catch (err) {
+                athletes.sort((a, b) =>
+                    timeToSeconds(a["race time"]) -
+                    timeToSeconds(b["race time"])
+                );
+
+                render(athletes.slice(0,10));
+
+                lastUpdated.textContent =
+                    new Date().toLocaleTimeString();
+
+            }
+
+        });
+
+    }
+
+    catch(err){
 
         console.error(err);
-
-        leaderboardBody.innerHTML = `
-        <tr>
-            <td colspan="4">Error loading leaderboard.</td>
-        </tr>`;
 
     }
 
