@@ -7,26 +7,67 @@ const lastUpdated = document.getElementById("lastUpdated");
 const REFRESH_INTERVAL = 10000;
 
 // -------------------------------------
-// Parse Google CSV
+// Parse CSV
 // -------------------------------------
-function parseCSV(text) {
+function parseCSV(csv) {
 
-    const lines = text.trim().split(/\r?\n/);
+    const rows = [];
+    let row = [];
+    let value = "";
+    let insideQuotes = false;
 
-    const headers = lines[0]
-        .split(",")
-        .map(h => h.replace(/^"|"$/g, "").trim().toLowerCase());
+    for (let i = 0; i < csv.length; i++) {
 
-    return lines.slice(1).map(line => {
+        const c = csv[i];
 
-        const values = line.match(/(".*?"|[^,]+)/g) || [];
+        if (c === '"') {
+
+            insideQuotes = !insideQuotes;
+
+        } else if (c === "," && !insideQuotes) {
+
+            row.push(value);
+            value = "";
+
+        } else if ((c === "\n" || c === "\r") && !insideQuotes) {
+
+            if (value !== "" || row.length > 0) {
+
+                row.push(value);
+                rows.push(row);
+
+                row = [];
+                value = "";
+
+            }
+
+        } else {
+
+            value += c;
+
+        }
+
+    }
+
+    if (value !== "" || row.length > 0) {
+        row.push(value);
+        rows.push(row);
+    }
+
+    const headers = rows[0].map(h =>
+        h.replace(/^"|"$/g, "").trim().toLowerCase()
+    );
+
+    return rows.slice(1).map(r => {
 
         const obj = {};
 
         headers.forEach((header, i) => {
-            obj[header] = (values[i] || "")
+
+            obj[header] = (r[i] || "")
                 .replace(/^"|"$/g, "")
                 .trim();
+
         });
 
         return obj;
@@ -36,20 +77,20 @@ function parseCSV(text) {
 }
 
 // -------------------------------------
-// Convert race time to seconds
+// Convert race time
 // -------------------------------------
 function timeToSeconds(time) {
 
     if (!time) return Infinity;
 
-    const parts = time.split(":").map(Number);
+    const p = time.split(":").map(Number);
 
-    if (parts.length === 3) {
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (p.length === 3) {
+        return p[0] * 3600 + p[1] * 60 + p[2];
     }
 
-    if (parts.length === 2) {
-        return parts[0] * 60 + parts[1];
+    if (p.length === 2) {
+        return p[0] * 60 + p[1];
     }
 
     return Infinity;
@@ -57,7 +98,7 @@ function timeToSeconds(time) {
 }
 
 // -------------------------------------
-// Render leaderboard
+// Render
 // -------------------------------------
 function render(results) {
 
@@ -78,9 +119,11 @@ function render(results) {
 
         const tr = document.createElement("tr");
 
-        const name = athlete["partner full name"]
-            ? `${athlete["first name"]} ${athlete["last name"]} & ${athlete["partner full name"]}`
-            : `${athlete["first name"]} ${athlete["last name"]}`;
+        let name = `${athlete["first name"]} ${athlete["last name"]}`;
+
+        if (athlete["partner full name"] !== "") {
+            name += ` & ${athlete["partner full name"]}`;
+        }
 
         tr.innerHTML = `
             <td>${index + 1}</td>
@@ -96,7 +139,7 @@ function render(results) {
 }
 
 // -------------------------------------
-// Load leaderboard
+// Load Leaderboard
 // -------------------------------------
 async function loadLeaderboard() {
 
@@ -112,9 +155,7 @@ async function loadLeaderboard() {
 
         let athletes = parseCSV(csv);
 
-        console.log(athletes);
-
-        athletes = athletes.filter(a => a["finish time"]);
+        athletes = athletes.filter(a => a["finish time"] !== "");
 
         athletes.sort((a, b) =>
             timeToSeconds(a["race time"]) -
@@ -125,7 +166,8 @@ async function loadLeaderboard() {
 
         render(athletes);
 
-        lastUpdated.textContent = new Date().toLocaleTimeString();
+        lastUpdated.textContent =
+            new Date().toLocaleTimeString();
 
     } catch (err) {
 
@@ -141,4 +183,5 @@ async function loadLeaderboard() {
 }
 
 loadLeaderboard();
+
 setInterval(loadLeaderboard, REFRESH_INTERVAL);
