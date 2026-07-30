@@ -128,7 +128,7 @@ athletes = athletes.filter(a => a["finish time"] !== "");
                 return (
             timeToSeconds(a["race time"]) -
             timeToSeconds(b["race time"])
-        );
+               );
 
     });
 
