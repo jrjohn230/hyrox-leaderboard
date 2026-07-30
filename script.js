@@ -85,17 +85,17 @@ function render(results) {
 
         const tr = document.createElement("tr");
 
-        const name =
-            athlete["Partner Full Name"]
-            ? `${athlete["First Name"]} ${athlete["Last Name"]} & ${athlete["Partner Full Name"]}`
-            : `${athlete["First Name"]} ${athlete["Last Name"]}`;
+      const name =
+    athlete["partner full name"]
+        ? `${athlete["first name"]} ${athlete["last name"]} & ${athlete["partner full name"]}`
+        : `${athlete["first name"]} ${athlete["last name"]}`;
 
-        tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${name}</td>
-            <td>${athlete["Division"]}</td>
-            <td>${athlete["Race Time"]}</td>
-        `;
+       tr.innerHTML = `
+    <td>${index + 1}</td>
+    <td>${name}</td>
+    <td>${athlete["division"]}</td>
+    <td>${athlete["race time"]}</td>
+`;    `;
 
         leaderboardBody.appendChild(tr);
 
@@ -122,16 +122,15 @@ async function loadLeaderboard() {
 
         let athletes = parseCSV(csv);
 
-        athletes = athletes.filter(a => a["Finish Time"] !== "");
-
+athletes = athletes.filter(a => a["finish time"] !== "");
         athletes.sort((a, b) => {
 
-            return (
-                timeToSeconds(a["Race Time"]) -
-                timeToSeconds(b["Race Time"])
-            );
+                return (
+            timeToSeconds(a["race time"]) -
+            timeToSeconds(b["race time"])
+        );
 
-        });
+    });
 
         athletes = athletes.slice(0, 10);
 
