@@ -9,22 +9,25 @@ const REFRESH_INTERVAL = 10000;
 // -----------------------------
 // CSV parser
 // -----------------------------
-function parseCSV(csv) {
+function parseCSV(text) {
 
-    const lines = csv.trim().split(/\r?\n/);
+    const lines = text.trim().split(/\r?\n/);
 
-    const headers = lines[0].split(",").map(h => h.trim());
+    // Detect whether the file is comma or tab separated
+    const delimiter = lines[0].includes("\t") ? "\t" : ",";
+
+    const headers = lines[0]
+        .split(delimiter)
+        .map(h => h.trim().toLowerCase());
 
     return lines.slice(1).map(line => {
 
-        const values = line.split(",");
+        const values = line.split(delimiter);
 
         const obj = {};
 
         headers.forEach((header, i) => {
-
             obj[header] = (values[i] || "").trim();
-
         });
 
         return obj;
