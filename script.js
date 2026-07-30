@@ -6,16 +6,36 @@ const lastUpdated = document.getElementById("lastUpdated");
 
 const REFRESH_INTERVAL = 10000;
 
-function normalizeKeys(row) {
-    const obj = {};
+// ----------------------------------------------------
+// Parse the published Google Sheet (TAB delimited)
+// ----------------------------------------------------
+function parseCSV(text) {
 
-    Object.keys(row).forEach(key => {
-        obj[key.trim().toLowerCase()] = row[key];
+    const lines = text.trim().split(/\r?\n/);
+
+    const headers = lines[0]
+        .split("\t")
+        .map(h => h.trim().toLowerCase());
+
+    return lines.slice(1).map(line => {
+
+        const values = line.split("\t");
+
+        const obj = {};
+
+        headers.forEach((header, i) => {
+            obj[header] = (values[i] || "").trim();
+        });
+
+        return obj;
+
     });
 
-    return obj;
 }
 
+// ----------------------------------------------------
+// Convert race time into seconds
+// ----------------------------------------------------
 function timeToSeconds(time) {
 
     if (!time) return Infinity;
@@ -31,8 +51,12 @@ function timeToSeconds(time) {
     }
 
     return Infinity;
+
 }
 
+// ----------------------------------------------------
+// Render leaderboard
+// ----------------------------------------------------
 function render(results) {
 
     leaderboardBody.innerHTML = "";
@@ -41,9 +65,7 @@ function render(results) {
 
         leaderboardBody.innerHTML = `
         <tr>
-            <td colspan="4">
-                Waiting for race results...
-            </td>
+            <td colspan="4">Waiting for race results...</td>
         </tr>`;
 
         return;
@@ -54,73 +76,72 @@ function render(results) {
         const partner = athlete["partner full name"];
 
         const name =
-            partner && partner.trim() !== ""
-            ? `${athlete["first name"]} ${athlete["last name"]} & ${partner}`
-            : `${athlete["first name"]} ${athlete["last name"]}`;
+            partner && partner !== ""
+                ? `${athlete["first name"]} ${athlete["last name"]} & ${partner}`
+                : `${athlete["first name"]} ${athlete["last name"]}`;
 
-        const tr = document.createElement("tr");
+        const row = document.createElement("tr");
 
-        tr.innerHTML = `
+        row.innerHTML = `
             <td>${index + 1}</td>
             <td>${name}</td>
             <td>${athlete["division"]}</td>
             <td>${athlete["race time"]}</td>
         `;
 
-        leaderboardBody.appendChild(tr);
+        leaderboardBody.appendChild(row);
 
     });
 
 }
 
+// ----------------------------------------------------
+// Load leaderboard
+// ----------------------------------------------------
 async function loadLeaderboard() {
 
     try {
 
         const response = await fetch(SHEET_URL + "&t=" + Date.now());
 
-        const csv = await response.text();
+        if (!response.ok) {
+            throw new Error("Unable to download sheet.");
+        }
 
-        Papa.parse(csv, {
+        const text = await response.text();
 
-            header: true,
-            skipEmptyLines: true,
+        let athletes = parseCSV(text);
 
-            complete: function(results) {
+        console.log(athletes);
 
-                let athletes = results.data.map(normalizeKeys);
+        athletes = athletes.filter(a =>
+            a["finish time"] &&
+            a["finish time"].trim() !== ""
+        );
 
-                console.log(athletes);
+        athletes.sort((a, b) =>
+            timeToSeconds(a["race time"]) -
+            timeToSeconds(b["race time"])
+        );
 
-                athletes = athletes.filter(a =>
-                    a["finish time"] &&
-                    a["finish time"].trim() !== ""
-                );
+        athletes = athletes.slice(0, 10);
 
-                athletes.sort((a, b) =>
-                    timeToSeconds(a["race time"]) -
-                    timeToSeconds(b["race time"])
-                );
+        render(athletes);
 
-                render(athletes.slice(0,10));
+        lastUpdated.textContent = new Date().toLocaleTimeString();
 
-                lastUpdated.textContent =
-                    new Date().toLocaleTimeString();
-
-            }
-
-        });
-
-    }
-
-    catch(err){
+    } catch (err) {
 
         console.error(err);
+
+        leaderboardBody.innerHTML = `
+        <tr>
+            <td colspan="4">Error loading leaderboard.</td>
+        </tr>`;
 
     }
 
 }
 
 loadLeaderboard();
-
 setInterval(loadLeaderboard, REFRESH_INTERVAL);
