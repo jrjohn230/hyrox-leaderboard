@@ -217,6 +217,12 @@ header::after{
 
 }
 
+.logo.left{
+
+    justify-content:flex-start;
+
+}
+
 .logo.right{
 
     justify-content:flex-end;
@@ -225,8 +231,8 @@ header::after{
 
 .logo img{
 
-    max-height:72px;
-    max-width:220px;
+    height:100px;
+    width:auto;
 
     object-fit:contain;
 
@@ -245,10 +251,10 @@ header::after{
 
 .title h1{
 
-    font-size:2.6rem;
+    font-size:3.5rem;
     font-weight:900;
 
-    letter-spacing:3px;
+    letter-spacing:4px;
 
     color:var(--white);
 
@@ -334,13 +340,13 @@ main{
 
     width:100%;
 
-    background:var(--panel);
+    background:rgba(18,18,18,.92);
 
-    border-radius:20px;
+    border-radius:22px;
 
-    padding:28px;
+    padding:36px;
 
-    backdrop-filter:blur(14px);
+    backdrop-filter:blur(16px);
 
     box-shadow:var(--shadow);
 
@@ -361,7 +367,7 @@ thead{
 
 th{
     color:var(--yellow);
-    font-size:1.2rem;
+    font-size:1.4rem;
     font-weight:800;
     letter-spacing:2px;
     text-transform:uppercase;
@@ -369,7 +375,7 @@ th{
 }
 
 td{
-    font-size:2rem;
+    font-size:2.5rem;
     font-weight:600;
     padding:18px 14px;
     border-bottom:1px solid rgba(255,255,255,.08);
@@ -405,7 +411,7 @@ td:nth-child(4){
     text-align:right;
     font-weight:900;
     color:var(--yellow);
-    font-size:2.2rem;
+    font-size:2.5rem;
 }
 
 /* Alternate rows */
@@ -442,7 +448,7 @@ tbody tr:nth-child(3){
 
 footer{
 
-    height:60px;
+    height:65px;
 
     display:flex;
     justify-content:space-between;
@@ -450,7 +456,7 @@ footer{
 
     color:var(--gray);
 
-    font-size:1rem;
+    font-size:1.1rem;
 
     letter-spacing:1px;
 
