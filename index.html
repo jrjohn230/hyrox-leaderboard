@@ -1,124 +1,113 @@
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<!DOCTYPE html>
-<html lang="en">
+// ==========================================================
+// HYROX LEADERBOARD
+// Google Sheets Live API
+// ==========================================================
 
-<head>
+const API_URL = "https://script.google.com/macros/s/AKfycbzQplJheDGbK6ozEAKspcnmGe3bKg1wI8W6XW35Xlp84l4nkpgqg2-izET1sU5XtfwG/exec";
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+const REFRESH_INTERVAL = 5000;
 
-    <title>BFT HALFROX Leaderboard</title>
+const leaderboardBody = document.getElementById("leaderboardBody");
+const lastUpdated = document.getElementById("lastUpdated");
 
-    <link rel="stylesheet" href="styles.css">
+function raceTimeToSeconds(time) {
 
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    if (!time) return Number.MAX_SAFE_INTEGER;
 
-</head>
+    // Handle normal race times like 0:42:31
+    if (typeof time === "string" && time.includes(":")) {
 
-<body>
+        const parts = time.split(":").map(Number);
 
-    <!-- Background -->
-    <div class="background"></div>
-    <div class="overlay"></div>
+        if (parts.length === 3) {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        }
 
-    <div id="app">
+        if (parts.length === 2) {
+            return parts[0] * 60 + parts[1];
+        }
+    }
 
-        <!-- ==========================================
-             HEADER
-        =========================================== -->
+    // Handle Google date format
+    const d = new Date(time);
 
-        <header>
+    if (!isNaN(d.getTime())) {
+        return (
+            d.getUTCHours() * 3600 +
+            d.getUTCMinutes() * 60 +
+            d.getUTCSeconds()
+        );
+    }
 
-            <div class="logo left">
-                <img src="assets/hyrox-logo.png" alt="HYROX Logo">
-            </div>
+    return Number.MAX_SAFE_INTEGER;
+}
 
-            <div class="title">
+function renderLeaderboard(athletes) {
 
-                <h1>BFT HALFROX LEADERBOARD</h1>
+    leaderboardBody.innerHTML = "";
 
-                <div id="liveStatus">
+    if (athletes.length === 0) {
 
-                    <span class="live-dot"></span>
+        leaderboardBody.innerHTML = `
+            <tr>
+                <td colspan="4">Waiting for race results...</td>
+            </tr>
+        `;
 
-                    <span>LIVE LEADERBOARD</span>
+        return;
+    }
 
-                </div>
+    athletes.forEach((athlete, index) => {
 
-            </div>
+        leaderboardBody.innerHTML += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
+                <td>${athlete["Division"]}</td>
+                <td>${athlete["Race time"]}</td>
+            </tr>
+        `;
 
-            <div class="logo right">
-                <img src="assets/bft-logo.png" alt="Body Fit Training Logo">
-            </div>
+    });
 
-        </header>
+}
 
-        <!-- ==========================================
-             MAIN CONTENT
-        =========================================== -->
+async function loadLeaderboard() {
 
-        <main>
+    try {
 
-            <section class="leaderboard-card">
+        const response = await fetch(API_URL);
 
-                <table id="leaderboard">
+        const athletes = await response.json();
 
-                    <thead>
+        const finishers = athletes.filter(a =>
+            a["Finish time"] &&
+            a["Finish time"] !== ""
+        );
 
-                        <tr>
+        finishers.sort((a, b) =>
+            raceTimeToSeconds(a["Race time"]) -
+            raceTimeToSeconds(b["Race time"])
+        );
 
-                            <th>PLACE</th>
-                            <th>ATHLETE</th>
-                            <th>DIVISION</th>
-                            <th>TIME</th>
+        renderLeaderboard(finishers.slice(0, 10));
 
-                        </tr>
+        lastUpdated.textContent = new Date().toLocaleTimeString();
 
-                    </thead>
+    } catch (error) {
 
-                    <tbody id="leaderboardBody">
+        console.error(error);
 
-                        <tr>
+        leaderboardBody.innerHTML = `
+            <tr>
+                <td colspan="4">Unable to load leaderboard.</td>
+            </tr>
+        `;
 
-                            <td colspan="4">
+    }
 
-                                Waiting for race results...
+}
 
-                            </td>
+loadLeaderboard();
 
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </section>
-
-        </main>
-
-        <!-- ==========================================
-             FOOTER
-        =========================================== -->
-
-        <footer>
-
-            <div class="footer-left">
-
-                Last Updated:
-                <span id="lastUpdated">--:--:--</span>
-
-            </div>
-
-            <div class="footer-right">
-
-            </div>
-
-        </footer>
-
-    </div>
-
-    <script src="script.js"></script>
-
-</body>
-
-</html>
+setInterval(loadLeaderboard, REFRESH_INTERVAL);
