@@ -8,7 +8,7 @@ const API_URL =
 
 const REFRESH_INTERVAL = 5000;
 
-// IMPORTANT: This must match the HTML id exactly
+// These IDs MUST match the HTML exactly
 const leaderboardBody = document.getElementById("leaderboardBody");
 const lastUpdated = document.getElementById("lastUpdated");
 
@@ -16,7 +16,7 @@ function timeToSeconds(time) {
 
     if (!time) return 999999;
 
-    // Handle text times like "42:31" or "1:02:45"
+    // If it's already a string like 0:42:31
     if (typeof time === "string" && time.includes(":")) {
 
         const parts = time.split(":").map(Number);
@@ -30,7 +30,7 @@ function timeToSeconds(time) {
         }
     }
 
-    // Handle Google date objects
+    // Google Sheets Date object
     const d = new Date(time);
 
     if (!isNaN(d)) {
@@ -51,12 +51,13 @@ function render(athletes) {
     athletes.forEach((athlete, index) => {
 
         leaderboardBody.innerHTML += `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
-            <td>${athlete["Division"]}</td>
-            <td>${athlete["Race time"]}</td>
-        </tr>`;
+            <tr>
+                <td>${index + 1}</td>
+                <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
+                <td>${athlete["Division"]}</td>
+                <td>${athlete["Race time"]}</td>
+            </tr>
+        `;
     });
 
 }
@@ -66,6 +67,7 @@ async function loadLeaderboard() {
     try {
 
         const response = await fetch(API_URL);
+
         const athletes = await response.json();
 
         const finished = athletes.filter(a =>
@@ -87,11 +89,14 @@ async function loadLeaderboard() {
         console.error(err);
 
         leaderboardBody.innerHTML = `
-        <tr>
-            <td colspan="4">Unable to load leaderboard.</td>
-        </tr>`;
+            <tr>
+                <td colspan="4">Unable to load leaderboard.</td>
+            </tr>
+        `;
     }
+
 }
 
 loadLeaderboard();
+
 setInterval(loadLeaderboard, REFRESH_INTERVAL);
