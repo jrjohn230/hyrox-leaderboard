@@ -1,134 +1,87 @@
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTS7ihQsENKn-CP2aougdTfYzNnnmQcbvZFCDFbnKlAWL-gCqbKRF5zjcEYoI_yFDGK7fqqE3Evnaqj/pub?output=csv";
+// ==========================================================
+// HYROX LEADERBOARD
+// Live Google Sheets API Version
+// ==========================================================
 
-const leaderboardBody = document.getElementById("leaderboardBody");
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbzQplJheDGbK6ozEAKspcnmGe3bKg1wI8W6XW35Xlp84l4nkpgqg2-izET1sU5XtfwG/exec";
+
+const REFRESH_INTERVAL = 5000;
+
+const leaderboardBody = document.getElementById("leaderboard-body");
 const lastUpdated = document.getElementById("lastUpdated");
 
-const REFRESH_INTERVAL = 10000;
-
-// ----------------------------------------------------
-// Parse the published Google Sheet (TAB delimited)
-// ----------------------------------------------------
-function parseCSV(text) {
-
-    const lines = text.trim().split(/\r?\n/);
-
-    const headers = lines[0]
-        .split("\t")
-        .map(h => h.trim().toLowerCase());
-
-    return lines.slice(1).map(line => {
-
-        const values = line.split("\t");
-
-        const obj = {};
-
-        headers.forEach((header, i) => {
-            obj[header] = (values[i] || "").trim();
-        });
-
-        return obj;
-
-    });
-
-}
-
-// ----------------------------------------------------
-// Convert race time into seconds
-// ----------------------------------------------------
 function timeToSeconds(time) {
 
-    if (!time) return Infinity;
+    if (!time) return 999999;
 
-    const parts = time.split(":").map(Number);
+    // Handles times like 0:42:31
+    if (time.includes(":")) {
 
-    if (parts.length === 3) {
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        const parts = time.split(":").map(Number);
+
+        if (parts.length === 3) {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        }
+
+        if (parts.length === 2) {
+            return parts[0] * 60 + parts[1];
+        }
     }
 
-    if (parts.length === 2) {
-        return parts[0] * 60 + parts[1];
+    // Handles Google date format
+    const d = new Date(time);
+
+    if (!isNaN(d)) {
+        return (
+            d.getUTCHours() * 3600 +
+            d.getUTCMinutes() * 60 +
+            d.getUTCSeconds()
+        );
     }
 
-    return Infinity;
-
+    return 999999;
 }
 
-// ----------------------------------------------------
-// Render leaderboard
-// ----------------------------------------------------
-function render(results) {
+function render(athletes) {
 
     leaderboardBody.innerHTML = "";
 
-    if (results.length === 0) {
+    athletes.forEach((athlete, index) => {
 
-        leaderboardBody.innerHTML = `
+        leaderboardBody.innerHTML += `
         <tr>
-            <td colspan="4">Waiting for race results...</td>
-        </tr>`;
-
-        return;
-    }
-
-    results.forEach((athlete, index) => {
-
-        const partner = athlete["partner full name"];
-
-        const name =
-            partner && partner !== ""
-                ? `${athlete["first name"]} ${athlete["last name"]} & ${partner}`
-                : `${athlete["first name"]} ${athlete["last name"]}`;
-
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${name}</td>
-            <td>${athlete["division"]}</td>
-            <td>${athlete["race time"]}</td>
-        `;
-
-        leaderboardBody.appendChild(row);
-
+            <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
+            <td>${athlete["Division"]}</td>
+            <td>${athlete["Race time"]}</td>
+        </tr>`;
     });
 
 }
 
-// ----------------------------------------------------
-// Load leaderboard
-// ----------------------------------------------------
 async function loadLeaderboard() {
 
     try {
 
-        const response = await fetch(SHEET_URL + "&t=" + Date.now());
+        const response = await fetch(API_URL);
 
-        if (!response.ok) {
-            throw new Error("Unable to download sheet.");
-        }
+        const athletes = await response.json();
 
-        const text = await response.text();
-
-        let athletes = parseCSV(text);
-
-        console.log(athletes);
-
-        athletes = athletes.filter(a =>
-            a["finish time"] &&
-            a["finish time"].trim() !== ""
+        const finished = athletes.filter(a =>
+            a["Finish time"] &&
+            a["Finish time"] !== ""
         );
 
-        athletes.sort((a, b) =>
-            timeToSeconds(a["race time"]) -
-            timeToSeconds(b["race time"])
+        finished.sort((a, b) =>
+            timeToSeconds(a["Race time"]) -
+            timeToSeconds(b["Race time"])
         );
 
-        athletes = athletes.slice(0, 10);
+        render(finished.slice(0, 10));
 
-        render(athletes);
-
-        lastUpdated.textContent = new Date().toLocaleTimeString();
+        lastUpdated.textContent =
+            new Date().toLocaleTimeString();
 
     } catch (err) {
 
@@ -136,12 +89,11 @@ async function loadLeaderboard() {
 
         leaderboardBody.innerHTML = `
         <tr>
-            <td colspan="4">Error loading leaderboard.</td>
+            <td colspan="4">Unable to load leaderboard.</td>
         </tr>`;
-
     }
-
 }
 
 loadLeaderboard();
+
 setInterval(loadLeaderboard, REFRESH_INTERVAL);
