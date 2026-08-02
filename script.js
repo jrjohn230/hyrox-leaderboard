@@ -1,71 +1,34 @@
 // ==========================================================
 // HYROX LEADERBOARD
-// Live Google Sheets API Version
+// script.js
 // ==========================================================
 
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbzQplJheDGbK6ozEAKspcnmGe3bKg1wI8W6XW35Xlp84l4nkpgqg2-izET1sU5XtfwG/exec";
+// Replace this with your Google Apps Script Web App URL
+const API_URL = "YOUR_WEB_APP_URL_HERE";
 
-const REFRESH_INTERVAL = 5000;
+const leaderboardBody = document.getElementById("leaderboard-body");
+const lastUpdated = document.getElementById("last-updated");
 
-const leaderboardBody = document.getElementById("leaderboardBody");
-const lastUpdated = document.getElementById("lastUpdated");
-
-// Convert Google Sheets time into seconds for sorting
+// Convert HH:MM:SS or H:MM:SS into total seconds for sorting
 function timeToSeconds(time) {
 
     if (!time) return Number.MAX_SAFE_INTEGER;
 
-    // Handles normal race times like 0:42:31
-    if (typeof time === "string" && time.includes(":")) {
+    const parts = time.split(":").map(Number);
 
-        const parts = time.split(":").map(Number);
+    let h = 0;
+    let m = 0;
+    let s = 0;
 
-        if (parts.length === 3) {
-            return parts[0] * 3600 + parts[1] * 60 + parts[2];
-        }
-
-        if (parts.length === 2) {
-            return parts[0] * 60 + parts[1];
-        }
+    if (parts.length === 3) {
+        [h, m, s] = parts;
+    } else if (parts.length === 2) {
+        [m, s] = parts;
+    } else {
+        return Number.MAX_SAFE_INTEGER;
     }
 
-    // Handles Google Sheets Date format
-    const d = new Date(time);
-
-    if (!isNaN(d.getTime())) {
-        return (
-            d.getUTCHours() * 3600 +
-            d.getUTCMinutes() * 60 +
-            d.getUTCSeconds()
-        );
-    }
-
-    return Number.MAX_SAFE_INTEGER;
-}
-
-// Convert Google Sheets Date into HH:MM:SS
-function formatRaceTime(time) {
-
-    if (!time) return "--:--:--";
-
-    // Already formatted
-    if (typeof time === "string" && time.includes(":") && !time.includes("T")) {
-        return time;
-    }
-
-    const d = new Date(time);
-
-    if (!isNaN(d.getTime())) {
-
-        const h = String(d.getUTCHours()).padStart(2, "0");
-        const m = String(d.getUTCMinutes()).padStart(2, "0");
-        const s = String(d.getUTCSeconds()).padStart(2, "0");
-
-        return `${h}:${m}:${s}`;
-    }
-
-    return time;
+    return (h * 3600) + (m * 60) + s;
 }
 
 // Render leaderboard
@@ -91,9 +54,10 @@ function render(athletes) {
                 <td>${index + 1}</td>
                 <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
                 <td>${athlete["Division"]}</td>
-<td>${athlete["Race time"]}</td>
+                <td>${athlete["Race time"]}</td>
             </tr>
         `;
+
     });
 
 }
@@ -104,7 +68,6 @@ async function loadLeaderboard() {
     try {
 
         const response = await fetch(API_URL);
-
         const athletes = await response.json();
 
         const finishers = athletes.filter(a =>
@@ -131,8 +94,11 @@ async function loadLeaderboard() {
             </tr>
         `;
     }
+
 }
 
+// Load immediately
 loadLeaderboard();
 
-setInterval(loadLeaderboard, REFRESH_INTERVAL);
+// Refresh every 5 seconds
+setInterval(loadLeaderboard, 5000);
