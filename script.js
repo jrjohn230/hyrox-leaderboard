@@ -3,12 +3,13 @@
 // script.js
 // ==========================================================
 
-// Replace this with your Google Apps Script Web App URL
 const API_URL = "https://script.google.com/macros/s/AKfycbzQplJheDGbK6ozEAKspcnmGe3bKg1wI8W6XW35Xlp84l4nkpgqg2-izET1sU5XtfwG/exec";
-const leaderboardBody = document.getElementById("leaderboard-body");
-const lastUpdated = document.getElementById("last-updated");
 
-// Convert HH:MM:SS or H:MM:SS into total seconds for sorting
+// THESE MUST MATCH YOUR HTML
+const leaderboardBody = document.getElementById("leaderboardBody");
+const lastUpdated = document.getElementById("lastUpdated");
+
+// Convert race time to seconds for sorting
 function timeToSeconds(time) {
 
     if (!time) return Number.MAX_SAFE_INTEGER;
@@ -23,14 +24,13 @@ function timeToSeconds(time) {
         [h, m, s] = parts;
     } else if (parts.length === 2) {
         [m, s] = parts;
-    } else {
-        return Number.MAX_SAFE_INTEGER;
     }
 
-    return (h * 3600) + (m * 60) + s;
+    return h * 3600 + m * 60 + s;
+
 }
 
-// Render leaderboard
+// Build the table
 function render(athletes) {
 
     leaderboardBody.innerHTML = "";
@@ -44,6 +44,7 @@ function render(athletes) {
         `;
 
         return;
+
     }
 
     athletes.forEach((athlete, index) => {
@@ -67,6 +68,7 @@ async function loadLeaderboard() {
     try {
 
         const response = await fetch(API_URL);
+
         const athletes = await response.json();
 
         const finishers = athletes.filter(a =>
@@ -92,12 +94,11 @@ async function loadLeaderboard() {
                 <td colspan="4">Unable to load leaderboard.</td>
             </tr>
         `;
+
     }
 
 }
 
-// Load immediately
 loadLeaderboard();
 
-// Refresh every 5 seconds
 setInterval(loadLeaderboard, 5000);
