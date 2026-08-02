@@ -8,15 +8,16 @@ const API_URL =
 
 const REFRESH_INTERVAL = 5000;
 
-const leaderboardBody = document.getElementById("leaderboard-body");
+// IMPORTANT: This must match the HTML id exactly
+const leaderboardBody = document.getElementById("leaderboardBody");
 const lastUpdated = document.getElementById("lastUpdated");
 
 function timeToSeconds(time) {
 
     if (!time) return 999999;
 
-    // Handles times like 0:42:31
-    if (time.includes(":")) {
+    // Handle text times like "42:31" or "1:02:45"
+    if (typeof time === "string" && time.includes(":")) {
 
         const parts = time.split(":").map(Number);
 
@@ -29,7 +30,7 @@ function timeToSeconds(time) {
         }
     }
 
-    // Handles Google date format
+    // Handle Google date objects
     const d = new Date(time);
 
     if (!isNaN(d)) {
@@ -65,7 +66,6 @@ async function loadLeaderboard() {
     try {
 
         const response = await fetch(API_URL);
-
         const athletes = await response.json();
 
         const finished = athletes.filter(a =>
@@ -80,8 +80,7 @@ async function loadLeaderboard() {
 
         render(finished.slice(0, 10));
 
-        lastUpdated.textContent =
-            new Date().toLocaleTimeString();
+        lastUpdated.textContent = new Date().toLocaleTimeString();
 
     } catch (err) {
 
@@ -95,5 +94,4 @@ async function loadLeaderboard() {
 }
 
 loadLeaderboard();
-
 setInterval(loadLeaderboard, REFRESH_INTERVAL);
