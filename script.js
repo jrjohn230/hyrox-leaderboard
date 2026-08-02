@@ -8,15 +8,15 @@ const API_URL =
 
 const REFRESH_INTERVAL = 5000;
 
-// These IDs MUST match the HTML exactly
 const leaderboardBody = document.getElementById("leaderboardBody");
 const lastUpdated = document.getElementById("lastUpdated");
 
+// Convert Google Sheets time into seconds for sorting
 function timeToSeconds(time) {
 
-    if (!time) return 999999;
+    if (!time) return Number.MAX_SAFE_INTEGER;
 
-    // If it's already a string like 0:42:31
+    // Handles normal race times like 0:42:31
     if (typeof time === "string" && time.includes(":")) {
 
         const parts = time.split(":").map(Number);
@@ -30,10 +30,10 @@ function timeToSeconds(time) {
         }
     }
 
-    // Google Sheets Date object
+    // Handles Google Sheets Date format
     const d = new Date(time);
 
-    if (!isNaN(d)) {
+    if (!isNaN(d.getTime())) {
         return (
             d.getUTCHours() * 3600 +
             d.getUTCMinutes() * 60 +
@@ -41,12 +41,48 @@ function timeToSeconds(time) {
         );
     }
 
-    return 999999;
+    return Number.MAX_SAFE_INTEGER;
 }
 
+// Convert Google Sheets Date into HH:MM:SS
+function formatRaceTime(time) {
+
+    if (!time) return "--:--:--";
+
+    // Already formatted
+    if (typeof time === "string" && time.includes(":") && !time.includes("T")) {
+        return time;
+    }
+
+    const d = new Date(time);
+
+    if (!isNaN(d.getTime())) {
+
+        const h = String(d.getUTCHours()).padStart(2, "0");
+        const m = String(d.getUTCMinutes()).padStart(2, "0");
+        const s = String(d.getUTCSeconds()).padStart(2, "0");
+
+        return `${h}:${m}:${s}`;
+    }
+
+    return time;
+}
+
+// Render leaderboard
 function render(athletes) {
 
     leaderboardBody.innerHTML = "";
+
+    if (athletes.length === 0) {
+
+        leaderboardBody.innerHTML = `
+            <tr>
+                <td colspan="4">Waiting for race results...</td>
+            </tr>
+        `;
+
+        return;
+    }
 
     athletes.forEach((athlete, index) => {
 
@@ -55,13 +91,14 @@ function render(athletes) {
                 <td>${index + 1}</td>
                 <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
                 <td>${athlete["Division"]}</td>
-                <td>${athlete["Race time"]}</td>
+                <td>${formatRaceTime(athlete["Race time"])}</td>
             </tr>
         `;
     });
 
 }
 
+// Load data
 async function loadLeaderboard() {
 
     try {
@@ -70,23 +107,23 @@ async function loadLeaderboard() {
 
         const athletes = await response.json();
 
-        const finished = athletes.filter(a =>
+        const finishers = athletes.filter(a =>
             a["Finish time"] &&
             a["Finish time"] !== ""
         );
 
-        finished.sort((a, b) =>
+        finishers.sort((a, b) =>
             timeToSeconds(a["Race time"]) -
             timeToSeconds(b["Race time"])
         );
 
-        render(finished.slice(0, 10));
+        render(finishers.slice(0, 10));
 
         lastUpdated.textContent = new Date().toLocaleTimeString();
 
-    } catch (err) {
+    } catch (error) {
 
-        console.error(err);
+        console.error(error);
 
         leaderboardBody.innerHTML = `
             <tr>
@@ -94,7 +131,6 @@ async function loadLeaderboard() {
             </tr>
         `;
     }
-
 }
 
 loadLeaderboard();
