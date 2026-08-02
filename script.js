@@ -91,7 +91,7 @@ function render(athletes) {
                 <td>${index + 1}</td>
                 <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
                 <td>${athlete["Division"]}</td>
-                <td>${formatRaceTime(athlete["Race time"])}</td>
+<td>${athlete["Race time"]}</td>
             </tr>
         `;
     });
