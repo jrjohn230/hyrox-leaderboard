@@ -49,10 +49,14 @@ function render(athletes) {
 
     athletes.forEach((athlete, index) => {
 
+        const athleteName = athlete["Partner Full Name"]
+            ? `${athlete["First Name"]} ${athlete["Last Name"]} & ${athlete["Partner Full Name"]}`
+            : `${athlete["First Name"]} ${athlete["Last Name"]}`;
+
         leaderboardBody.innerHTML += `
             <tr>
                 <td>${index + 1}</td>
-                <td>${athlete["First Name"]} ${athlete["Last Name"]}</td>
+                <td>${athleteName}</td>
                 <td>${athlete["Division"]}</td>
                 <td>${athlete["Race time"]}</td>
             </tr>
