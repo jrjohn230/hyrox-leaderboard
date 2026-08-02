@@ -4,8 +4,7 @@
 // ==========================================================
 
 // Replace this with your Google Apps Script Web App URL
-const API_URL = "YOUR_WEB_APP_URL_HERE";
-
+const API_URL = "https://script.google.com/macros/s/AKfycbzQplJheDGbK6ozEAKspcnmGe3bKg1wI8W6XW35Xlp84l4nkpgqg2-izET1sU5XtfwG/exec";
 const leaderboardBody = document.getElementById("leaderboard-body");
 const lastUpdated = document.getElementById("last-updated");
 
