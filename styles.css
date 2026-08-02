@@ -345,3 +345,116 @@ main{
     box-shadow:var(--shadow);
 
 }
+/* ==========================================
+   TABLE
+========================================== */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
+
+thead{
+    border-bottom:3px solid var(--yellow);
+}
+
+th{
+    color:var(--yellow);
+    font-size:1.2rem;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    padding:18px 14px;
+}
+
+td{
+    font-size:2rem;
+    font-weight:600;
+    padding:18px 14px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    vertical-align:middle;
+}
+
+/* Column widths */
+
+th:nth-child(1),
+td:nth-child(1){
+    width:8%;
+    text-align:center;
+    font-weight:900;
+}
+
+th:nth-child(2),
+td:nth-child(2){
+    width:37%;
+    text-align:left;
+}
+
+th:nth-child(3),
+td:nth-child(3){
+    width:30%;
+    text-align:left;
+    color:var(--gray);
+    font-size:1.5rem;
+}
+
+th:nth-child(4),
+td:nth-child(4){
+    width:25%;
+    text-align:right;
+    font-weight:900;
+    color:var(--yellow);
+    font-size:2.2rem;
+}
+
+/* Alternate rows */
+
+tbody tr:nth-child(odd){
+    background:rgba(255,255,255,.03);
+}
+
+tbody tr:nth-child(even){
+    background:rgba(255,255,255,.01);
+}
+
+tbody tr:hover{
+    background:rgba(255,209,0,.08);
+}
+
+/* Top 3 */
+
+tbody tr:nth-child(1){
+    background:rgba(255,209,0,.20);
+}
+
+tbody tr:nth-child(2){
+    background:rgba(210,210,210,.15);
+}
+
+tbody tr:nth-child(3){
+    background:rgba(200,135,75,.15);
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+footer{
+
+    height:60px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    color:var(--gray);
+
+    font-size:1rem;
+
+    letter-spacing:1px;
+
+    border-top:2px solid rgba(255,255,255,.08);
+
+    margin-top:20px;
+}
